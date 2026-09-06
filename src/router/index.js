@@ -1,4 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '../stores/auth.js'
+
+// Auth views
+import Login from '../views/auth/Login.vue'
+import Register from '../views/auth/Register.vue'
 
 // Patient Views
 import PatientDashboard from '../views/patient/Dashboard.vue'
@@ -18,30 +23,69 @@ import PharmaFormulary from '../views/pharmacy/Formulary.vue'
 import PharmaCompliance from '../views/pharmacy/Compliance.vue'
 
 const routes = [
-  // Patient Routes
-  { path: '/patient/dashboard', name: 'patient-dashboard', component: PatientDashboard },
-  { path: '/patient/appointments', name: 'patient-appointments', component: PatientAppointments },
-  { path: '/patient/surgeries', name: 'patient-surgeries', component: PatientSurgeries },
-  { path: '/patient/medications', name: 'patient-medications', component: PatientMedications },
-  { path: '/patient/chat', name: 'patient-chat', component: PatientChat },
+  // Auth routes (public)
+  { path: '/login', name: 'login', component: Login, meta: { requiresAuth: false } },
+  { path: '/register', name: 'register', component: Register, meta: { requiresAuth: false } },
   
-  // Doctor Routes
-  { path: '/doctor/patients', name: 'doctor-patients', component: DoctorPatients },
-  { path: '/doctor/schedule', name: 'doctor-schedule', component: DoctorSchedule },
-  { path: '/doctor/prescriptions', name: 'doctor-prescriptions', component: DoctorPrescriptions },
+  // Patient Routes (protected)
+  { path: '/patient/dashboard', name: 'patient-dashboard', component: PatientDashboard, meta: { requiresAuth: true, role: 'patient' } },
+  { path: '/patient/appointments', name: 'patient-appointments', component: PatientAppointments, meta: { requiresAuth: true, role: 'patient' } },
+  { path: '/patient/surgeries', name: 'patient-surgeries', component: PatientSurgeries, meta: { requiresAuth: true, role: 'patient' } },
+  { path: '/patient/medications', name: 'patient-medications', component: PatientMedications, meta: { requiresAuth: true, role: 'patient' } },
+  { path: '/patient/chat', name: 'patient-chat', component: PatientChat, meta: { requiresAuth: true, role: 'patient' } },
   
-  // Pharmacy Routes
-  { path: '/pharmacy/inventory', name: 'pharma-inventory', component: PharmaInventory },
-  { path: '/pharmacy/formulary', name: 'pharma-formulary', component: PharmaFormulary },
-  { path: '/pharmacy/compliance', name: 'pharma-compliance', component: PharmaCompliance },
+  // Doctor Routes (protected)
+  { path: '/doctor/patients', name: 'doctor-patients', component: DoctorPatients, meta: { requiresAuth: true, role: 'doctor' } },
+  { path: '/doctor/schedule', name: 'doctor-schedule', component: DoctorSchedule, meta: { requiresAuth: true, role: 'doctor' } },
+  { path: '/doctor/prescriptions', name: 'doctor-prescriptions', component: DoctorPrescriptions, meta: { requiresAuth: true, role: 'doctor' } },
+  
+  // Pharmacy Routes (protected)
+  { path: '/pharmacy/inventory', name: 'pharma-inventory', component: PharmaInventory, meta: { requiresAuth: true, role: 'pharma' } },
+  { path: '/pharmacy/formulary', name: 'pharma-formulary', component: PharmaFormulary, meta: { requiresAuth: true, role: 'pharma' } },
+  { path: '/pharmacy/compliance', name: 'pharma-compliance', component: PharmaCompliance, meta: { requiresAuth: true, role: 'pharma' } },
   
   // Default redirect
-  { path: '/', redirect: '/patient/dashboard' }
+  { path: '/', redirect: '/login' },
+  { path: '/:pathMatch(.*)*', redirect: '/login' }
 ]
 
 const router = createRouter({
   history: createWebHistory(),
   routes
+})
+
+// Route guard for authentication
+router.beforeEach(async (to, from, next) => {
+  const authStore = useAuthStore()
+  const isAuthenticated = authStore.isAuthenticated
+  const userRole = authStore.user?.role
+  
+  // Check if route requires authentication
+  if (to.meta.requiresAuth) {
+    if (!isAuthenticated) {
+      // Not logged in, redirect to login
+      return next({ name: 'login', query: { redirect: to.fullPath } })
+    }
+    
+    // Check role-based access
+    if (to.meta.role && to.meta.role !== userRole) {
+      // User doesn't have required role
+      return next({ name: `${userRole}-dashboard` })
+    }
+  } else {
+    // Public routes
+    if (isAuthenticated && (to.name === 'login' || to.name === 'register')) {
+      // Already logged in, redirect to dashboard
+      const dashboardRoutes = {
+        patient: 'patient-dashboard',
+        doctor: 'doctor-patients',
+        pharma: 'pharma-inventory'
+      }
+      return next({ name: dashboardRoutes[userRole] })
+    }
+  }
+  
+  next()
 })
 
 export default router
