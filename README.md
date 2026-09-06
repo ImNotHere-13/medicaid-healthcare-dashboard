@@ -1,503 +1,385 @@
-# 🏥 MEDICAID v3.3 - Healthcare Dashboard
+# MEDICAID v3.4.0 - Secure Healthcare Dashboard
 
-A modern, production-ready healthcare management system with separate dashboards for **Patients**, **Doctors**, and **Pharmaceutical Administrators**. Built with Vue 3, fully accessible, responsive, and feature-complete.
-
-![Version](https://img.shields.io/badge/version-3.3.0-blue.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
-![Vue](https://img.shields.io/badge/vue-3.3+-green.svg)
-
----
-
-## 📋 Table of Contents
-
-- [Features](#features)
-- [Architecture](#architecture)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Project Structure](#project-structure)
-- [Dashboards Overview](#dashboards-overview)
-- [Accessibility](#accessibility)
-- [Development](#development)
-- [Deployment](#deployment)
-- [Security](#security)
-
----
-
-## ✨ Features
-
-### 🏥 Multi-Role System
-- **Patient Dashboard** - Health tracking, appointments, medications, surgeries
-- **Doctor Dashboard** - Patient management, surgery scheduling, prescriptions
-- **Pharmacy Dashboard** - Inventory management, formulary, compliance & pricing
-- **Role Switching** - Seamless switching between roles in sidebar
-
-### 🔧 Core Features
-- ✅ Real-time notifications & alerts
-- ✅ Advanced search & filtering across all views
-- ✅ Interactive charts & health metrics
-- ✅ Dark mode toggle
-- ✅ Responsive mobile design
-- ✅ Voice input for chat (patient)
-- ✅ Medication refill requests
-- ✅ Surgery pre-op checklists
-- ✅ Inventory management with low-stock alerts
-- ✅ Compliance tracking & temperature monitoring
-- ✅ Pricing & insurance cost analysis
-
-### ♿ Accessibility
-- Full ARIA labels on all interactive elements
-- Keyboard navigation support
-- Screen reader compatible
-- Color-blind friendly status indicators
-- High contrast dark mode
-- Semantic HTML throughout
-
-### 🎨 Modern UI/UX
-- Built with Tailwind CSS
-- Smooth animations & transitions
-- Intuitive card-based layout
-- Status-color coding (confirmed/pending/warning)
-- Beautiful gradient headers
-- Hover effects on interactive elements
-
----
-
-## 🏗️ Architecture
-
-```
-src/
-├── main.js                 # Entry point
-├── App.vue                 # Root component
-├── store/
-│   └── index.js           # Centralized state management
-├── router/
-│   └── index.js           # Route configuration
-├── views/
-│   ├── patient/
-│   │   ├── Dashboard.vue
-│   │   ├── Appointments.vue
-│   │   ├── Surgeries.vue
-│   │   ├── Medications.vue
-│   │   └── Chat.vue
-│   ├── doctor/
-│   │   ├── Patients.vue
-│   │   ├── Schedule.vue
-│   │   └── Prescriptions.vue
-│   └── pharmacy/
-│       ├── Inventory.vue
-│       ├── Formulary.vue
-│       └── Compliance.vue
-├── components/
-│   ├── Sidebar.vue
-│   ├── NavItem.vue
-│   ├── Card.vue
-│   ├── DataTable.vue
-│   ├── StatsGrid.vue
-│   ├── SearchBar.vue
-│   ├── FilterTags.vue
-│   └── NotificationContainer.vue
-└── styles/
-    └── main.css           # Tailwind & custom styles
-```
-
-**State Management:**
-- Global store with auth, patient, doctor, and pharmacy modules
-- Reactive state with computed properties
-- Notification system for user feedback
-
-**Routing:**
-- Patient routes: `/patient/*`
-- Doctor routes: `/doctor/*`
-- Pharmacy routes: `/pharmacy/*`
-
----
-
-## 🚀 Installation
+## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 16+ (LTS recommended)
+- Node.js 16+
 - npm or yarn
 
-### Setup
+### Installation
 
 ```bash
-# Clone the repository
+# Clone repository
 git clone https://github.com/ImNotHere-13/medicaid-healthcare-dashboard.git
 cd medicaid-healthcare-dashboard
 
 # Install dependencies
 npm install
 
-# Start development server
+# Install backend dependencies
+cd backend && npm install && cd ..
+```
+
+### Environment Setup
+
+**Frontend (.env.local)**
+```env
+VITE_API_URL=http://localhost:3000/api
+VITE_ENV=development
+```
+
+**Backend (backend/.env)**
+```env
+NODE_ENV=development
+PORT=3000
+JWT_SECRET=your-super-secret-key-change-in-production
+FRONTEND_URL=http://localhost:5173
+```
+
+### Running the Application
+
+**Option 1: Separate Terminal Windows**
+
+```bash
+# Terminal 1 - Backend
+cd backend
 npm run dev
+# Runs on http://localhost:3000
 
-# Build for production
+# Terminal 2 - Frontend
+npm run dev
+# Opens on http://localhost:5173
+```
+
+**Option 2: Concurrent (requires concurrently package)**
+
+```bash
+npm run dev:full
+```
+
+---
+
+## 🔐 Authentication & Security
+
+### Login Flow
+
+1. User enters email/password on login page
+2. Frontend sends credentials to `/api/auth/login`
+3. Backend verifies credentials against hashed passwords
+4. JWT token generated and returned
+5. Token stored in httpOnly cookie + localStorage
+6. Frontend stores user info in Pinia store
+7. All subsequent API calls include token
+8. Route guards prevent unauthorized access
+
+### Password Security
+
+```javascript
+// Passwords are hashed with bcryptjs
+const passwordHash = await bcrypt.hash(password, 10)
+
+// Never stored in plaintext
+// Never sent back to frontend
+// Verified using: await bcrypt.compare(inputPassword, storedHash)
+```
+
+### Demo Credentials
+
+```
+Email:    john@example.com
+Password: demo123
+Role:     Patient
+---
+Email:    sarah@hospital.com
+Password: demo123
+Role:     Doctor
+---
+Email:    emily@pharmacy.com
+Password: demo123
+Role:     Pharmacy
+```
+
+### Security Features
+
+✅ **JWT Authentication**
+- 24-hour token expiration
+- Secure token storage in httpOnly cookies
+- Token verification on app load
+
+✅ **Password Hashing**
+- bcryptjs with salt rounds: 10
+- Passwords never logged or transmitted
+- Secure comparison prevents timing attacks
+
+✅ **Rate Limiting**
+- 5 login attempts per 15 minutes per IP
+- 100 general requests per 15 minutes
+- Prevents brute force attacks
+
+✅ **CORS Protection**
+- Only frontend domain allowed
+- Credentials required for cross-origin requests
+- httpOnly cookies prevent XSS access
+
+✅ **Input Validation**
+- Zod schema validation
+- Email format validation
+- Password strength requirements
+- Server-side validation (not just client)
+
+✅ **Session Management**
+- Automatic logout after 24 hours
+- Token verification on app boot
+- Logout clears all auth data
+- Refresh functionality planned for v3.5
+
+---
+
+## 📊 Project Structure
+
+```
+medicaid-healthcare-dashboard/
+├── frontend/
+│   ├── src/
+│   │   ├── main.js                 # App entry point
+│   │   ├── App.vue                 # Root component
+│   │   ├── views/
+│   │   │   ├── auth/
+│   │   │   │   ├── Login.vue       # Login/Register page
+│   │   │   │   └── Register.vue
+│   │   │   ├── patient/
+│   │   │   ├── doctor/
+│   │   │   └── pharmacy/
+│   │   ├── components/             # Reusable UI components
+│   │   ├── stores/
+│   │   │   └── auth.js             # Pinia auth store
+│   │   ├── router/
+│   │   │   └── index.js            # Vue Router with guards
+│   │   └── styles/
+│   │       └── main.css            # Tailwind & custom styles
+│   ├── package.json
+│   └── vite.config.js
+│
+├── backend/
+│   ├── server.js                   # Express server entry
+│   ├── routes/
+│   │   ├── auth.js                 # Login/Register/Logout endpoints
+│   │   └── users.js                # Protected user endpoints
+│   ├── middleware/
+│   │   └── auth.js                 # JWT verification middleware
+│   ├── data/
+│   │   └── mock-users.js           # Mock database with hashed passwords
+│   ├── package.json
+│   └── .env
+│
+├── README.md
+├── DEVELOPMENT.md
+├── CONTRIBUTING.md
+└── CHANGELOG.md
+```
+
+---
+
+## 🎯 Role-Based Features
+
+### 👤 Patient
+- Health score & vitals tracking
+- Appointment management
+- Surgery information
+- Medication refills
+- Lab results
+- AI chat assistant
+- Health journal
+
+### 🏥 Doctor
+- Patient roster
+- Surgery scheduling
+- Prescription management
+- Patient notes
+- Pre-op checklists
+- Medical history
+
+### 💊 Pharmacy
+- Drug inventory tracking
+- Stock level monitoring
+- Hospital formulary
+- Compliance audits
+- Temperature monitoring
+- Pricing analysis
+
+---
+
+## 🛡️ Security Checklist
+
+- [x] Secure password hashing (bcryptjs)
+- [x] JWT token authentication
+- [x] Rate limiting on login
+- [x] CORS protection
+- [x] Input validation (Zod)
+- [x] Route guards for protected pages
+- [x] httpOnly secure cookies
+- [x] Environment variable management
+- [x] Token expiration (24 hours)
+- [x] Session persistence
+- [x] Logout functionality
+- [ ] OAuth2 integration (planned v3.5)
+- [ ] Two-factor authentication (planned v3.5)
+- [ ] Database encryption (planned v3.5)
+- [ ] HIPAA compliance audit (planned v3.5)
+
+---
+
+## 📦 Production Deployment
+
+### Build Frontend
+
+```bash
 npm run build
-
-# Preview production build
-npm run preview
+# Creates dist/ folder
 ```
 
-The app will be available at `http://localhost:5173`
+### Environment Variables (Production)
 
----
-
-## 💻 Usage
-
-### Quick Start
-
-1. **Open the application** - App loads with Patient dashboard by default
-2. **Switch Roles** - Use sidebar buttons to switch between Patient → Doctor → Pharmacy
-3. **Navigate** - Click sidebar items to explore different views
-4. **Search & Filter** - Use search bars and filter tags to find data
-5. **Dark Mode** - Toggle theme in header
-
-### Patient Features
-
-**Dashboard**
-- Health score & vitals
-- Upcoming appointments & surgeries
-- Medication refills needed
-- Blood pressure trend chart
-- Health activity log
-
-**Appointments**
-- View all appointments
-- Search by doctor/specialty
-- Status filtering (Confirmed, Pending)
-- Edit & reschedule options
-
-**Surgeries**
-- Upcoming procedures with risk assessment
-- Pre-op information download
-- Past surgery history
-- Recovery time estimates
-
-**Medications**
-- Current active medications
-- Dosage & frequency info
-- Refill status tracking
-- Request new refills
-- Common side effects listed
-
-**AI Assistant Chat**
-- Voice input support
-- Smart health questions
-- Quick question templates
-- Full record context awareness
-
-### Doctor Features
-
-**My Patients**
-- Patient list with status
-- Allergies & conditions
-- Next appointment tracking
-- View patient notes
-- Quick prescription access
-
-**Surgery Schedule**
-- Upcoming surgeries calendar
-- Operating room assignments
-- Pre-op checklist management
-- Surgery duration & risk info
-- Add/edit surgeries
-
-**Prescriptions**
-- Active prescriptions table
-- Patient & medication search
-- Refill tracking
-- Prescription editing
-- Dosage & frequency management
-
-### Pharmacy Features
-
-**Drug Inventory**
-- Real-time stock levels
-- Critical stock alerts
-- Reorder management
-- Stock updates
-- Supplier information
-- Cost tracking
-
-**Hospital Formulary**
-- Approved medications
-- Usage categories
-- Prior authorization requirements
-- Restrictions & contraindications
-- Formulary editing
-
-**Compliance & Pricing**
-- FDA approval tracking
-- Storage compliance monitoring
-- Temperature control verification
-- Insurance cost analysis
-- Patient copay information
-- Pricing adjustments
-
----
-
-## 🎯 Project Structure
-
-### Components
-
-**Sidebar.vue**
-- Navigation for all roles
-- Role switcher
-- User profile display
-
-**Card.vue**
-- Reusable status-aware card
-- Border color coding by status
-- Hover effects
-
-**StatsGrid.vue**
-- 4-column responsive grid
-- Key metrics display
-- Change indicators
-
-**SearchBar.vue**
-- Accessible search input
-- Real-time filtering
-- Icon included
-
-**FilterTags.vue**
-- Multi/single select
-- Toggle functionality
-- Keyboard accessible
-
-**NotificationContainer.vue**
-- Toast notifications
-- Auto-dismiss after 5s
-- Type-based styling
-
-### Views
-
-All views follow the pattern:
-```vue
-<template>
-  <NotificationContainer>
-    <!-- Content with search, filters, data display -->
-  </NotificationContainer>
-</template>
+```env
+# .env (Backend)
+NODE_ENV=production
+PORT=3000
+JWT_SECRET=use-strong-random-key-here
+FRONTEND_URL=https://your-domain.com
 ```
 
----
-
-## ♿ Accessibility Features
-
-✅ **ARIA Attributes**
-- `aria-label` on all buttons & interactive elements
-- `aria-current="page"` on active nav items
-- `role="alert"` on notifications
-
-✅ **Keyboard Navigation**
-- Tab through all elements
-- Enter to activate buttons
-- Arrow keys for tag selection
-
-✅ **Screen Reader Support**
-- Semantic HTML (buttons, links, tables)
-- Descriptive labels
-- Status announcements
-
-✅ **Visual Accessibility**
-- High contrast text
-- Status not indicated by color alone
-- Readable font sizes
-- Sufficient touch targets (min 44px)
-
-✅ **Color Blind Friendly**
-- Status uses text labels + colors
-- Icons accompany all actions
-- Not relying on red/green alone
-
----
-
-## 🛠️ Development
-
-### Tech Stack
-- **Framework:** Vue 3 (Composition API)
-- **Styling:** Tailwind CSS 3.3+
-- **Routing:** Vue Router 4
-- **Charts:** Chart.js 4
-- **Date Handling:** date-fns
-- **Build Tool:** Vite 5
-
-### Running Tests
-
-```bash
-# Unit tests
-npm run test
-
-# E2E tests
-npm run test:e2e
-
-# Coverage report
-npm run test:coverage
-```
-
-### Code Style
-
-```bash
-# Lint & fix
-npm run lint
-```
-
-### Adding a New Feature
-
-1. Create view file in `src/views/{role}/`
-2. Add route to `src/router/index.js`
-3. Add navigation item to `Sidebar.vue`
-4. Create reusable components in `src/components/`
-5. Add state/methods to `src/store/index.js`
-
----
-
-## 📦 Deployment
-
-### Production Build
-
-```bash
-# Build optimized bundle
-npm run build
-
-# Output in dist/ folder
-ls dist/
-```
-
-### Deploy to Vercel
+### Deploy to Vercel (Frontend)
 
 ```bash
 npm i -g vercel
 vercel
 ```
 
-### Deploy to Netlify
+### Deploy to Heroku (Backend)
 
 ```bash
-npm i -g netlify-cli
-netlify deploy --prod --dir=dist
-```
-
-### Docker
-
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
-EXPOSE 5173
-CMD ["npm", "run", "preview"]
+heroku create medicaid-api
+git push heroku main
 ```
 
 ---
 
-## 🔒 Security
+## 🧪 Testing the Auth Flow
 
-### Current Implementation
-- ⚠️ Mock authentication (for demo purposes)
-- ⚠️ No real data encryption
-- ⚠️ No API authentication
+1. **Start the application**
+   ```bash
+   npm run dev:full
+   ```
 
-### Production Recommendations
+2. **Visit login page**
+   ```
+   http://localhost:5173/login
+   ```
 
-```javascript
-// 1. Implement JWT authentication
-// 2. Use HTTPS only
-// 3. Add CSRF protection
-// 4. Implement role-based access control (RBAC)
-// 5. Sanitize all user inputs
-// 6. Use secure cookies
-// 7. Add rate limiting
-// 8. Encrypt sensitive data at rest
-// 9. Implement audit logging
-// 10. Regular security audits
+3. **Test Login**
+   - Email: john@example.com
+   - Password: demo123
+   - Click Login
+   - Should redirect to Patient Dashboard
+
+4. **Test Logout**
+   - Click Logout button in sidebar
+   - Should redirect to login page
+   - Tokens should be cleared
+
+5. **Test Protected Routes**
+   - Try accessing `/patient/dashboard` directly
+   - Without login, should redirect to `/login`
+
+6. **Test Role-Based Access**
+   - Login as patient
+   - Try accessing `/doctor/patients`
+   - Should redirect to patient dashboard
+
+7. **Test Registration**
+   - Click Register tab
+   - Fill in details
+   - Create new account
+   - Should be logged in automatically
+
+---
+
+## 🐛 Troubleshooting
+
+### Backend won't start
+```bash
+# Check if port 3000 is in use
+lsof -i :3000
+# Kill the process
+kill -9 <PID>
 ```
 
-### Data Protection
-- All medical data should be encrypted (HIPAA compliance)
-- Implement audit trails for all data access
-- Use environment variables for sensitive config
-- Never commit secrets to repository
+### CORS errors
+- Check `FRONTEND_URL` in backend/.env
+- Ensure it matches your frontend URL
+- Restart backend server
+
+### Login not working
+- Check backend is running on port 3000
+- Check console for error messages
+- Verify email exists in mock-users.js
+- Try password: demo123
+
+### Logout not working
+- Clear browser cookies
+- Clear localStorage
+- Hard refresh (Ctrl+Shift+R)
 
 ---
 
-## 📊 Features by Role
+## 📚 API Endpoints
 
-### 👤 Patient
-- Health score tracking
-- Appointment management
-- Surgery information & recovery
-- Medication refills
-- Lab results
-- Health log entries
-- AI chat assistant
+### Authentication
 
-### 👨‍⚕️ Doctor
-- Patient roster management
-- Surgery scheduling
-- Prescription management
-- Patient notes
-- Pre-op checklist
-- Medical history access
+```
+POST /api/auth/login
+  Body: { email, password }
+  Returns: { token, user }
 
-### 💊 Pharmacist
-- Medication inventory tracking
-- Stock level monitoring
-- Hospital formulary management
-- Compliance auditing
-- Temperature monitoring
-- Pricing & insurance analysis
-- Reorder management
+POST /api/auth/register
+  Body: { fullName, email, password, confirmPassword, role }
+  Returns: { token, user }
 
----
+GET /api/auth/verify
+  Headers: { Authorization: Bearer <token> }
+  Returns: { user }
 
-## 🚀 Performance
+POST /api/auth/logout
+  Returns: { message }
+```
 
-- Lazy loading for views
-- Optimized re-renders with Vue 3
-- Debounced search inputs
-- Cached computed properties
-- Production build < 100KB (gzipped)
+### Users (Protected)
+
+```
+GET /api/users/profile
+  Headers: { Authorization: Bearer <token> }
+  Returns: { user }
+
+GET /api/users
+  Headers: { Authorization: Bearer <token> }
+  Returns: { users }
+```
 
 ---
 
-## 📝 License
+## 📄 License
 
-MIT License - See LICENSE file for details
-
----
-
-## 👥 Contributing
-
-Contributions welcome! Please:
-
-1. Fork the repository
-2. Create feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add AmazingFeature'`)
-4. Push to branch (`git push origin feature/AmazingFeature`)
-5. Open Pull Request
+MIT License - See LICENSE file
 
 ---
 
-## 📞 Support
+## 🤝 Support
 
-For issues, questions, or suggestions:
-- Open a GitHub issue
+For issues or questions:
+- Open GitHub issue
 - Email: support@medicaid.local
-- Documentation: [Full Docs](./docs)
+- Check DEVELOPMENT.md for detailed guides
 
 ---
 
-## 🎓 Learning Resources
-
-- [Vue 3 Docs](https://vuejs.org/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [Vue Router](https://router.vuejs.org/)
-- [Healthcare Standards (HIPAA)](https://www.hhs.gov/hipaa/)
-
----
-
-**Built with ❤️ for better healthcare management**
+**Built with security & healthcare best practices** 🏥
